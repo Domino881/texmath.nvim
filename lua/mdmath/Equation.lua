@@ -146,6 +146,7 @@ function Equation:_init(bufnr, row, col, text, opts)
     self.equation = text:gsub('^%$*(.-)%$*$', '%1')
 
     local cell_width, cell_height = terminfo.cell_size()
+    cell_height = cell_height * 0.8
 
     local flags, height
     if self.lines then
