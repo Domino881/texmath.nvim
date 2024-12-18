@@ -142,8 +142,13 @@ function Equation:_init(bufnr, row, col, text, opts)
     self.valid = true
     self.color = color
 
+    local eq = text
     -- remove trailing '$'
-    self.equation = text:gsub('^%$*(.-)%$*$', '%1')
+    eq = eq:gsub('^%$*(.-)%$*$', '%1')
+    -- remove trailing '\[ \]'
+    eq = eq:gsub('^%\\%[(.-)%\\%]$', '%1')
+
+    self.equation = eq
 
     local cell_width, cell_height = terminfo.cell_size()
     cell_height = cell_height * 0.8

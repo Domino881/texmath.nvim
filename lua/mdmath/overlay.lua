@@ -118,7 +118,7 @@ function Buffer:parse(start_row, end_row)
 
     local bufnr = self.bufnr
     local parser = self.parser
-    local tree = parser:parse({ start_row, end_row })[1]
+    local file_tree = parser:parse({ start_row, end_row })[1]
 
     local query = vim.treesitter.query.parse(
         'latex',
@@ -164,7 +164,7 @@ function Buffer:parse(start_row, end_row)
             process_equation(sr, sc, er, ec, value)
         end
     end
-    get_queries(tree)
+    get_queries(file_tree)
 
     for _, eq in ipairs(old_equations) do
         if eq ~= 0 and eq.valid then
