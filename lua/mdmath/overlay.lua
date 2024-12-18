@@ -1,11 +1,11 @@
-local nvim = require'mdmath.nvim'
-local util = require'mdmath.util'
+local nvim = require 'mdmath.nvim'
+local util = require 'mdmath.util'
 local ts = vim.treesitter
 local uv = vim.uv
-local Equation = require'mdmath.Equation'
-local config = require'mdmath.config'.opts
+local Equation = require 'mdmath.Equation'
+local config = require 'mdmath.config'.opts
 
-local augroup = nvim.create_augroup('MdMathManager', {clear = true})
+local augroup = nvim.create_augroup('MdMathManager', { clear = true })
 
 local M = {}
 local buffers = {}
@@ -18,28 +18,28 @@ local function get_parser(bufnr, lang)
     if not parser then
         error('Parser not found for ' .. lang, 2)
     end
-    
+
     return parser
 end
 
 function Buffer:_init(bufnr)
     self.bufnr = bufnr
     self.equations = {}
-    self.parser = get_parser(bufnr, 'markdown')
+    self.parser = get_parser(bufnr, 'latex')
     self.active = true
     self.timer = uv.new_timer()
     assert(self.timer, 'failed to create a timer')
 
     self:attach()
 
-    nvim.create_autocmd({'InsertLeave'}, {
+    nvim.create_autocmd({ 'InsertLeave' }, {
         buffer = bufnr,
         group = augroup,
         callback = function()
             self:parse_view()
         end
     })
-    nvim.create_autocmd({'WinScrolled'}, {
+    nvim.create_autocmd({ 'WinScrolled' }, {
         buffer = bufnr,
         group = augroup,
         callback = function()
@@ -70,7 +70,7 @@ function Buffer:free()
 
     self.timer:stop()
     self.timer:close()
-    
+
     self:clear(false)
 
     nvim.clear_autocmds {
@@ -110,15 +110,21 @@ function Buffer:parse(start_row, end_row)
 
     local bufnr = self.bufnr
     local parser = self.parser
-    parser:parse({start_row, end_row})
+    local tree = parser:parse({ start_row, end_row })[1]
 
-    -- FIX: Almost sure we can move this block to initialization
-    local inline_lang = 'markdown_inline'
-    local inlines = parser:children()[inline_lang]
-    if not inlines then
-        return nil
-    end
-    local query = vim.treesitter.query.parse(inline_lang, '(latex_block) @block')
+    local query = vim.treesitter.query.parse(
+        'latex',
+        [[
+          ;; Query for inline math
+          (inline_formula) @inline
+
+          ;; Query for block math
+          (displayed_equation) @block
+
+          ;; Query for environments like equation or align
+          (math_environment) @env
+        ]]
+    )
 
     local old_equations = self.equations
     local equations = {}
@@ -150,7 +156,7 @@ function Buffer:parse(start_row, end_row)
             process_equation(sr, sc, er, ec, value)
         end
     end
-    inlines:for_each_tree(get_queries)
+    get_queries(tree)
 
     for _, eq in ipairs(old_equations) do
         if eq ~= 0 and eq.valid then
